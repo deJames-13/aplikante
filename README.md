@@ -99,12 +99,13 @@ Aplikante adheres strictly to the **IBM Carbon Design System (v11)** aesthetic a
   ┌─────────────────────────────────────────────────────────────────────────────────┐
   │                           WEB CLIENT (VSA Deep Modules)                         │
   │                                                                                 │
-  │   Routes:  / (Dashboard)  │  /calendar  │  /resumes  │  /reminders  │ /django-api │
+  │   Routes:  / (Landing)  │ /dashboard │ /calendar │ /resumes │ /reminders │ /api    │
   │                                                                                 │
   │   Providers:  ToastProvider ➔ ResumesProvider ➔ RemindersProvider                │
   │                             ➔ ApplicationsProvider ➔ CalendarProvider            │
   │                                                                                 │
   │   Slices:                                                                       │
+  │   • features/landing/      (RenderSquaryGrid, Hero, Bento, About, Contact)      │
   │   • features/applications/ (DataGrid, QuickTrack, DetailModal, CarbonTag)       │
   │   • features/resumes/      (ResumeManager, DropZone, UploadModal, Cards)        │
   │   • features/reminders/    (NotificationCenter, RemindersView, Form)            │

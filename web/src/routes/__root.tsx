@@ -81,7 +81,7 @@ function RootComponent() {
         <CarbonHeader />
 
         {/* Route Outlet */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6" id="main-content">
+        <main className="flex-1 w-full flex flex-col" id="main-content">
           <Outlet />
         </main>
 

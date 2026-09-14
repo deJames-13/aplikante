@@ -60,6 +60,9 @@ web/src/
 │   ├── analytics/             # Pipeline velocity, stage conversions, health scorecard
 │   │   ├── components/        # CarbonCharts, PipelineFunnel, VelocityChart, PipelineHealthCard
 │   │   └── index.ts           # Public seam
+│   ├── landing/               # Product landing page (Render modular telemetry + Carbon v11)
+│   │   ├── components/        # LandingHero, RenderSquaryGrid, LandingFeaturesGrid, LandingAboutSection, LandingContactSection, LandingInteractivePreview, LandingAnnouncementBar, LandingMetricsMarquee
+│   │   └── index.ts           # Public seam
 │   └── django-api/            # Django REST API schema inspector & curl test bench
 │       ├── components/        # DjangoApiInspector
 │       └── index.ts           # Public seam
@@ -72,7 +75,8 @@ web/src/
 │   └── index.ts               # Shared module public seam
 ├── routes/                    # TanStack Router file-based route definitions
 │   ├── __root.tsx             # Root layout component, HTML shell, meta tags, and provider root
-│   ├── index.tsx              # Route: / (Dashboard & Job Data Grid)
+│   ├── index.tsx              # Route: / (Product Landing Page & Interactive Preview)
+│   ├── dashboard.tsx          # Route: /dashboard (Applications Command Center & Job Data Grid)
 │   ├── calendar.tsx           # Route: /calendar (Interview & Deadlines Calendar)
 │   ├── resumes.tsx            # Route: /resumes (Tailored Resumes Repository)
 │   ├── reminders.tsx          # Route: /reminders (Smart Reminders Center)
@@ -86,7 +90,8 @@ web/src/
 
 The application utilizes TanStack Router's file-based route engine:
 - **`src/routes/__root.tsx`**: Defines HTML metadata, links IBM Plex fonts, wraps children in `<AppProviders>`, renders the persistent `<CarbonHeader>`, route `<Outlet />`, persistent modal slots (`<QuickTrackDrawer />`, `<NotificationCenter />`, `<JobDetailModal />`, `<CarbonToastContainer />`), and `<CarbonFooter>`.
-- **`src/routes/index.tsx` (`/`)**: Main command center rendering the analytics funnel/velocity section (`<CarbonCharts />`) and high-density data grid (`<JobDataGrid />`).
+- **`src/routes/index.tsx` (`/`)**: Product Landing Page featuring Render-inspired modular dark telemetry grid, hero metrics, interactive data console preview, feature bento, architectural manifesto, and zero-radius contact form (`<LandingView />`).
+- **`src/routes/dashboard.tsx` (`/dashboard`)**: Main command center rendering the analytics funnel/velocity section (`<CarbonCharts />`) and high-density data grid (`<JobDataGrid />`).
 - **`src/routes/calendar.tsx` (`/calendar`)**: Interactive interview schedule with month navigation, event categorization, and meeting links (`<CalendarView />`).
 - **`src/routes/resumes.tsx` (`/resumes`)**: Resume version management, ATS keyword match scores, and upload workflow (`<ResumeManager />`).
 - **`src/routes/reminders.tsx` (`/reminders`)**: Actionable tasks, overdue alerts, and follow-up reminders (`<RemindersView />`).

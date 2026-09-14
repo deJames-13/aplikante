@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DjangoApiRouteImport } from './routes/django-api'
 import { Route as RemindersRouteImport } from './routes/reminders'
 import { Route as ResumesRouteImport } from './routes/resumes'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DjangoApiRoute = DjangoApiRouteImport.update({
@@ -44,6 +50,7 @@ const ResumesRoute = ResumesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/dashboard': typeof DashboardRoute
   '/django-api': typeof DjangoApiRoute
   '/reminders': typeof RemindersRoute
   '/resumes': typeof ResumesRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/dashboard': typeof DashboardRoute
   '/django-api': typeof DjangoApiRoute
   '/reminders': typeof RemindersRoute
   '/resumes': typeof ResumesRoute
@@ -59,21 +67,32 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/dashboard': typeof DashboardRoute
   '/django-api': typeof DjangoApiRoute
   '/reminders': typeof RemindersRoute
   '/resumes': typeof ResumesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/calendar' | '/django-api' | '/reminders' | '/resumes'
+  fullPaths:
+    '/' | '/calendar' | '/dashboard' | '/django-api' | '/reminders' | '/resumes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calendar' | '/django-api' | '/reminders' | '/resumes'
-  id: '__root__' | '/' | '/calendar' | '/django-api' | '/reminders' | '/resumes'
+  to:
+    '/' | '/calendar' | '/dashboard' | '/django-api' | '/reminders' | '/resumes'
+  id:
+    | '__root__'
+    | '/'
+    | '/calendar'
+    | '/dashboard'
+    | '/django-api'
+    | '/reminders'
+    | '/resumes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
+  DashboardRoute: typeof DashboardRoute
   DjangoApiRoute: typeof DjangoApiRoute
   RemindersRoute: typeof RemindersRoute
   ResumesRoute: typeof ResumesRoute
@@ -93,6 +112,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/django-api': {
@@ -122,6 +148,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
+  DashboardRoute: DashboardRoute,
   DjangoApiRoute: DjangoApiRoute,
   RemindersRoute: RemindersRoute,
   ResumesRoute: ResumesRoute,

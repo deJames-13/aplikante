@@ -7,7 +7,7 @@ export const Route = createFileRoute('/resumes')({
 
 function ResumesPage() {
   return (
-    <div className="space-y-4 animate-in fade-in duration-150">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-4 animate-in fade-in duration-150">
       <div>
         <h1 className="text-sm font-semibold uppercase tracking-wider text-[#161616]">
           Tailored Resume Management
