@@ -1,6 +1,0 @@
-{
-  "name": "Aplikante",
-  "description": "Enterprise-grade personal job application tracker adhering to IBM Carbon Design System principles.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
