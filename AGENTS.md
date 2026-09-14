@@ -1,0 +1,225 @@
+# Aplikante — Agent & Developer Architecture Guide (AGENTS.md)
+
+This document establishes the architectural standards, directory structure, contexts, and routing protocols for **Aplikante**, an enterprise-grade job application tracker and career pipeline platform.
+
+---
+
+## 1. System Overview & Monorepo Topology
+
+Aplikante is organized as a unified monorepo hosting both the high-density frontend client and the Django REST API service:
+
+```
+aplikante/
+├── web/                       # Frontend application (TanStack Start, React 19, Vite, Nitro)
+├── server/                    # Backend service (Django 6, Django REST Framework, SQLite/PostgreSQL)
+├── .draft/                    # [READ-ONLY] Pristine legacy reference — DO NOT MODIFY
+├── AGENTS.md                  # System architecture, routing protocols, and agent rules
+├── README.md                  # Project overview, feature showcase, and roadmap
+└── .gitignore                 # Unified ignore definitions for Node and Python ecosystems
+```
+
+---
+
+## 2. Frontend Architecture (`web/`)
+
+The frontend is built on **TanStack Start** (SSR + hydration via Nitro engine) adhering strictly to **Vertical Slice Architecture (VSA)** and the **Deep Module** philosophy from `codebase-design`.
+
+### 2.1 Directory Structure
+
+```
+web/src/
+├── features/                  # Domain-driven vertical slices (high locality, deep modules)
+│   ├── applications/          # Applications management, status transitions, data grid
+│   │   ├── components/        # JobDataGrid, JobGridRow, QuickTrackDrawer, JobDetailModal, CarbonTag
+│   │   ├── context/           # ApplicationsProvider & useApplications() hook
+│   │   ├── data/              # INITIAL_APPLICATIONS seed data
+│   │   ├── storage/           # applicationsStorage adapter
+│   │   ├── types.ts           # JobApplication, ApplicationStatus, PriorityLevel, TableDensity
+│   │   └── index.ts           # Public seam (minimal interface)
+│   ├── resumes/               # Tailored resume versioning & ATS match scoring
+│   │   ├── components/        # ResumeManager, ResumeCard, ResumeUploadModal, ResumePreviewModal
+│   │   ├── context/           # ResumesProvider & useResumes() hook
+│   │   ├── data/              # INITIAL_RESUMES seed data
+│   │   ├── storage/           # resumesStorage adapter
+│   │   ├── types.ts           # ResumeDocument
+│   │   └── index.ts           # Public seam
+│   ├── reminders/             # Actionable follow-ups, interview alerts, notifications
+│   │   ├── components/        # RemindersView, ReminderItem, NotificationCenter, AddReminderForm
+│   │   ├── context/           # RemindersProvider & useReminders() hook
+│   │   ├── data/              # INITIAL_REMINDERS seed data
+│   │   ├── storage/           # remindersStorage adapter
+│   │   ├── types.ts           # SmartReminder, ReminderPriority, ReminderType
+│   │   └── index.ts           # Public seam
+│   ├── calendar/              # Interview schedule, rounds, and deadline tracking
+│   │   ├── components/        # CalendarView, CalendarMonthGrid, CalendarEventModal, etc.
+│   │   ├── context/           # CalendarProvider & useCalendarEvents() hook
+│   │   ├── data/              # INITIAL_CALENDAR_EVENTS seed data
+│   │   ├── storage/           # calendarStorage adapter
+│   │   ├── types.ts           # CalendarEvent, CalendarEventType
+│   │   └── index.ts           # Public seam
+│   ├── analytics/             # Pipeline velocity, stage conversions, health scorecard
+│   │   ├── components/        # CarbonCharts, PipelineFunnel, VelocityChart, PipelineHealthCard
+│   │   └── index.ts           # Public seam
+│   └── django-api/            # Django REST API schema inspector & curl test bench
+│       ├── components/        # DjangoApiInspector
+│       └── index.ts           # Public seam
+├── shared/                    # Universal, domain-agnostic infrastructure
+│   ├── context/               # ToastProvider & useToasts()
+│   ├── layout/                # CarbonHeader & CarbonFooter application shell
+│   ├── lib/                   # Generic SSR-safe createStorageAdapter factory
+│   ├── providers/             # AppProviders composite root wrapper
+│   ├── ui/                    # CarbonToastContainer
+│   └── index.ts               # Shared module public seam
+├── routes/                    # TanStack Router file-based route definitions
+│   ├── __root.tsx             # Root layout component, HTML shell, meta tags, and provider root
+│   ├── index.tsx              # Route: / (Dashboard & Job Data Grid)
+│   ├── calendar.tsx           # Route: /calendar (Interview & Deadlines Calendar)
+│   ├── resumes.tsx            # Route: /resumes (Tailored Resumes Repository)
+│   ├── reminders.tsx          # Route: /reminders (Smart Reminders Center)
+│   └── django-api.tsx         # Route: /django-api (Django REST API Schema Inspector)
+├── router.tsx                 # TanStack Router instance creation
+├── routeTree.gen.ts           # Autogenerated route tree from `tsr generate`
+└── styles.css                 # IBM Carbon v11 Design Tokens, typography, zero-radius reset
+```
+
+### 2.2 Routing Architecture (TanStack Router)
+
+The application utilizes TanStack Router's file-based route engine:
+- **`src/routes/__root.tsx`**: Defines HTML metadata, links IBM Plex fonts, wraps children in `<AppProviders>`, renders the persistent `<CarbonHeader>`, route `<Outlet />`, persistent modal slots (`<QuickTrackDrawer />`, `<NotificationCenter />`, `<JobDetailModal />`, `<CarbonToastContainer />`), and `<CarbonFooter>`.
+- **`src/routes/index.tsx` (`/`)**: Main command center rendering the analytics funnel/velocity section (`<CarbonCharts />`) and high-density data grid (`<JobDataGrid />`).
+- **`src/routes/calendar.tsx` (`/calendar`)**: Interactive interview schedule with month navigation, event categorization, and meeting links (`<CalendarView />`).
+- **`src/routes/resumes.tsx` (`/resumes`)**: Resume version management, ATS keyword match scores, and upload workflow (`<ResumeManager />`).
+- **`src/routes/reminders.tsx` (`/reminders`)**: Actionable tasks, overdue alerts, and follow-up reminders (`<RemindersView />`).
+- **`src/routes/django-api.tsx` (`/django-api`)**: Live interactive REST API explorer showing endpoints, payload schemas, and Python model definitions (`<DjangoApiInspector />`).
+
+### 2.3 Contexts & State Management
+
+The application replaces monolithic contexts with a strictly layered, unidirectional composite provider hierarchy in [`web/src/shared/providers/app-providers.tsx`](file:///home/dej/Projects/projectx/aplikante/web/src/shared/providers/app-providers.tsx):
+
+```
+ToastProvider (shared/context)
+  └─ ResumesProvider (features/resumes)
+       └─ RemindersProvider (features/reminders)
+            └─ ApplicationsProvider (features/applications)
+                 └─ CalendarProvider (features/calendar)
+                      └─ {children}
+```
+
+#### Layer Responsibilities:
+1. **`ToastProvider`**: Universal toast alert dispatcher (`showToast('success' | 'info' | 'error', title, message)`).
+2. **`ResumesProvider`**: Manages resume document records, file metadata, and versioning. Persisted via `resumesStorage`.
+3. **`RemindersProvider`**: Tracks reminders, priority flags (`CRITICAL`, `WARNING`, `INFO`), snoozing, and unread counts. Persisted via `remindersStorage`.
+4. **`ApplicationsProvider`**: Manages job applications, stage progression, sorting/filtering, selection, quick track drawer state, and detail view. When a new application is logged, automatically dispatches a 7-day follow-up reminder via `useReminders().addReminder`.
+5. **`CalendarProvider`**: Manages scheduled interviews, deadlines, and panel info. Persisted via `calendarStorage`.
+
+### 2.4 Deep Module & Seam Rules
+- **Public Seams**: Every slice inside `features/<name>/` MUST export its public interface strictly via `index.ts`. Callers and routes must NEVER import deep internal files (e.g. `features/applications/components/JobGridRow.tsx`). Always import from `features/applications`.
+- **Storage Seams**: Local persistence uses the SSR-safe `createStorageAdapter<T>(key, fallback)` from `shared/lib/storage.ts`.
+- **Keyboard Navigation**: Global keyboard shortcuts are bound inside `ApplicationsProvider`:
+  - `/` : Focus global search input.
+  - `Q` / `q` : Open Quick Track Drawer.
+  - `Escape` : Close active modal/drawer.
+
+---
+
+## 3. Backend Architecture (`server/`)
+
+The backend is built with **Python 3.12+ / 3.14** and **Django 6.1+**, designed to provide high-performance RESTful APIs for job pipeline persistence and synchronization.
+
+### 3.1 Directory Structure
+
+```
+server/
+├── manage.py                  # Django management script
+├── requirements.txt           # Python dependency specifications
+├── server/                    # Core Django project configuration
+│   ├── __init__.py
+│   ├── settings.py            # Installed apps, database config, middleware, REST settings
+│   ├── urls.py                # Root URL dispatcher
+│   ├── wsgi.py                # WSGI entry point for production
+│   └── asgi.py                # ASGI entry point for async/websockets
+├── apps/                      # Django domain applications (planned/in-progress)
+│   ├── applications/          # Models, serializers, viewsets for job applications
+│   ├── resumes/               # Models and storage handlers for PDF resumes
+│   ├── reminders/             # Models and Celery tasks for scheduled alerts
+│   └── calendar_events/       # Models and iCal/Google Calendar sync handlers
+└── db.sqlite3                 # Local SQLite database (development)
+```
+
+### 3.2 Backend Models Specification
+
+The Django models match the frontend TypeScript domain types:
+
+```python
+# JobApplication Model
+class JobApplication(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='applications')
+    company = models.CharField(max_length=255, db_index=True)
+    role = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, blank=True)
+    job_type = models.CharField(max_length=20, choices=[('REMOTE', 'Remote'), ('HYBRID', 'Hybrid'), ('ONSITE', 'Onsite')], default='REMOTE')
+    date_applied = models.DateField()
+    status = models.CharField(max_length=20, choices=[
+        ('APPLIED', 'Applied'), ('SCREENING', 'Screening'), ('INTERVIEW', 'Interview'),
+        ('OFFER', 'Offer'), ('REJECTED', 'Rejected'), ('WITHDRAWN', 'Withdrawn')
+    ], default='APPLIED')
+    next_step = models.CharField(max_length=255, blank=True)
+    next_step_date = models.DateField(null=True, blank=True)
+    salary_range = models.CharField(max_length=100, blank=True)
+    priority = models.CharField(max_length=10, choices=[('LOW', 'Low'), ('MEDIUM', 'Medium'), ('HIGH', 'High')], default='MEDIUM')
+    job_url = models.URLField(max_length=500, blank=True)
+    resume = models.ForeignKey('ResumeDocument', null=True, blank=True, on_delete=models.SET_NULL)
+    notes = models.TextField(blank=True)
+    stages = models.JSONField(default=list)
+    recruiter_contact = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+```
+
+### 3.3 Routing & REST API Endpoints
+
+Django REST Framework router patterns:
+- `GET /api/v1/applications/` : List applications with filtering, search, and sorting.
+- `POST /api/v1/applications/` : Create new application record.
+- `GET|PUT|PATCH|DELETE /api/v1/applications/{id}/` : Retrieve, update, or delete application.
+- `POST /api/v1/applications/bulk_status_update/` : Batch status transition.
+- `GET|POST|DELETE /api/v1/resumes/` : Manage uploaded resume documents.
+- `GET|POST|PATCH /api/v1/reminders/` : List and update reminder completion/snooze.
+- `GET|POST /api/v1/calendar/` : List and schedule interview events.
+
+---
+
+## 4. Visual Design & Interface Standards
+
+Aplikante adheres strictly to the **IBM Carbon Design System (v11)** tokens and constraints:
+1. **Zero-Radius Architecture**:
+   - `border-radius: 0 !important` across all buttons, inputs, tags, modals, and containers.
+   - Distinctive, tactile, enterprise-grade engineering aesthetic.
+2. **Color Palette (Carbon Tokens)**:
+   - Primary Interactive: Carbon Blue 60 (`#0f62fe`), Hover (`#0353e9`), Active (`#002d9c`).
+   - Surfaces: Gray 10 (`#f4f4f4`), Gray 100 (`#161616`), Gray 90 (`#262626`), Gray 80 (`#393939`).
+   - Semantic Feedback: Green 50 (`#24a148`), Red 60 (`#da1e28`), Yellow 30 (`#b28600`), Purple 60 (`#8a3ffc`).
+3. **Typography**:
+   - UI & Headings: `IBM Plex Sans` (modular scale: 12px, 14px, 16px, 20px).
+   - Metrics, Tags, Codes, & Dates: `IBM Plex Mono` (tabular numerals, uppercase tracking).
+4. **Accessibility (WCAG 2.1 AA)**:
+   - Contrast ratio $\ge 4.5:1$ for all text elements.
+   - Explicit `focus-visible:outline-2` with focus ring in `#0f62fe`.
+   - Accessible roles (`role="dialog"`, `role="status"`, `aria-live="polite"`).
+
+---
+
+## 5. Developer & Agent Operational Rules
+
+1. **Workspace Boundary**:
+   - Frontend changes and npm package installations MUST occur exclusively inside `web/`.
+   - Backend changes and pip installations MUST occur exclusively inside `server/`.
+   - The `.draft/` directory is an immutable reference. NEVER write to or delete files inside `.draft/`.
+2. **TypeScript Strictness**:
+   - `"verbatimModuleSyntax": true` is enforced. All type-only imports must use `import type { ... }`.
+   - `"noUnusedLocals": true` and `"noUnusedParameters": true` are active. Unused variables or imports fail compilation.
+   - Always verify via `npx tsc --noEmit` before concluding work.
+3. **Route Generation**:
+   - After adding or modifying routes under `web/src/routes/`, execute `npm run generate-routes` (`tsr generate`).
+4. **Production Build Integrity**:
+   - Verify changes by running `npm run build` in `web/` to confirm client, SSR, and Nitro server outputs compile cleanly.

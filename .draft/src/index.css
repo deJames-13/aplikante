@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    border-radius: 0px !important;
+  }
+  
+  :focus-visible {
+    outline: 2px solid #0f62fe !important;
+    outline-offset: -2px !important;
+  }
+}
+
+/* Carbon specific utilities */
+.carbon-focus:focus-visible {
+  outline: 2px solid #0f62fe !important;
+  outline-offset: -2px !important;
+}
+
+/* Custom scrollbars matching enterprise dense tools */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e0e0e0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8d8d8d;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}
+
