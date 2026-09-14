@@ -1,5 +1,7 @@
 {
   "name": "web",
+  "author": "Derick Espinosa",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "imports": {
