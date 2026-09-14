@@ -117,8 +117,8 @@ develop-eggs/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+server/lib/
+server/lib64/
 parts/
 sdist/
 var/
@@ -128,6 +128,9 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# Never ignore web source code
+!web/src/**
 
 # Django Database & Static Asset Outputs
 server/db.sqlite3
